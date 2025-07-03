@@ -2,9 +2,14 @@ import { NoteDefinition, WamAsset } from "wam-extensions";
 import { MIDI, ScheduledMIDIEvent } from "../../shared/midi";
 import { AudioPool } from "./AudioPool";
 import { DrumSamplerVoice, DrumSamplerVoiceState } from "./Voice";
+import { PolyphonicVoice } from "./PolyphonicVoice";
 
 export type DrumSamplerKitState = {
   slots: DrumSamplerVoiceState[];
+  // New polyphonic mode properties
+  mode?: "drum" | "polyphonic";
+  polyphonicSampleIndex?: number; // Which slot to use for polyphonic mode
+  polyphonicStartNote?: number; // Base MIDI note (default C3 = 60)
 };
 
 export class DrumSamplerKit {
@@ -18,6 +23,10 @@ export class DrumSamplerKit {
   voices: DrumSamplerVoice[];
   buffers: (AudioBuffer | undefined)[];
   noteMap: Map<number, number[]>;
+
+  // New polyphonic mode properties
+  polyphonicVoices: PolyphonicVoice[];
+  maxPolyphony: number = 8; // Maximum simultaneous polyphonic notes
 
   callback?: () => void;
 
@@ -37,11 +46,22 @@ export class DrumSamplerKit {
     this.audioPool = new AudioPool(audioContext);
 
     this.loaded = false;
-    this.state = { slots: [] };
+    this.state = {
+      slots: [],
+      mode: "drum", // Default to drum mode
+      polyphonicSampleIndex: 0, // Default to first slot
+      polyphonicStartNote: 60, // Default to C3
+    };
 
     for (var i = 0; i < numVoices; i++) {
       this.voices.push(new DrumSamplerVoice(audioContext));
       this.buffers.push(undefined);
+    }
+
+    // Initialize polyphonic voices
+    this.polyphonicVoices = [];
+    for (let i = 0; i < this.maxPolyphony; i++) {
+      this.polyphonicVoices.push(new PolyphonicVoice(audioContext));
     }
   }
 
@@ -259,23 +279,121 @@ export class DrumSamplerKit {
     for (let v of this.voices) {
       v.connect(node);
     }
+    // Also connect polyphonic voices
+    for (let v of this.polyphonicVoices) {
+      v.connect(node);
+    }
   }
 
   processMIDIEvents(midiEvents: ScheduledMIDIEvent[]) {
     midiEvents.forEach((message) => {
       if (message.event[0] == MIDI.NOTE_ON && message.event[2] > 0) {
         let midiNote = message.event[1];
-        let voices = this.noteMap.get(midiNote);
-        if (voices) {
-          for (let i of voices) {
-            const slot = this.state.slots[i];
-            const startTime = slot.startTime || 0;
-            const endTime = slot.endTime;
-            this.voices[i].play(this.buffers[i], startTime, endTime);
+
+        if (this.state.mode === "polyphonic") {
+          this.playPolyphonicNote(midiNote);
+        } else {
+          // Original drum mode logic
+          let voices = this.noteMap.get(midiNote);
+          if (voices) {
+            for (let i of voices) {
+              const slot = this.state.slots[i];
+              const startTime = slot.startTime || 0;
+              const endTime = slot.endTime;
+              this.voices[i].play(this.buffers[i], startTime, endTime);
+            }
           }
         }
+      } else if (
+        message.event[0] == MIDI.NOTE_OFF ||
+        (message.event[0] == MIDI.NOTE_ON && message.event[2] == 0)
+      ) {
+        let midiNote = message.event[1];
+
+        if (this.state.mode === "polyphonic") {
+          this.stopPolyphonicNote(midiNote);
+        }
+        // Note: drum mode doesn't typically handle note off events
       }
     });
+  }
+
+  private playPolyphonicNote(midiNote: number) {
+    const sampleIndex = this.state.polyphonicSampleIndex || 0;
+    const buffer = this.buffers[sampleIndex];
+    const slot = this.state.slots[sampleIndex];
+    const startNote = this.state.polyphonicStartNote || 60;
+
+    if (!buffer || !slot) {
+      return; // No sample loaded
+    }
+
+    // Find an available voice or steal the oldest one
+    let availableVoice = this.polyphonicVoices.find((v) => !v.isActive());
+
+    if (!availableVoice) {
+      // Voice stealing: find the oldest voice
+      let oldestVoice = this.polyphonicVoices[0];
+      let oldestAge = oldestVoice.getAge();
+
+      for (let voice of this.polyphonicVoices) {
+        let age = voice.getAge();
+        if (age > oldestAge) {
+          oldestAge = age;
+          oldestVoice = voice;
+        }
+      }
+
+      availableVoice = oldestVoice;
+    }
+
+    // Play the note with pitch shifting
+    const startTime = slot.startTime || 0;
+    const endTime = slot.endTime;
+    availableVoice.play(buffer, midiNote, startNote, startTime, endTime);
+  }
+
+  private stopPolyphonicNote(midiNote: number) {
+    // Find and stop voices playing this specific note
+    for (let voice of this.polyphonicVoices) {
+      if (voice.getNoteNumber() === midiNote) {
+        voice.stop();
+      }
+    }
+  }
+
+  // Methods for polyphonic mode control
+  setMode(mode: "drum" | "polyphonic") {
+    this.state.mode = mode;
+    if (this.callback) {
+      this.callback();
+    }
+  }
+
+  getMode(): "drum" | "polyphonic" {
+    return this.state.mode || "drum";
+  }
+
+  setPolyphonicSampleIndex(index: number) {
+    this.state.polyphonicSampleIndex = index;
+    if (this.callback) {
+      this.callback();
+    }
+  }
+
+  getPolyphonicSampleIndex(): number {
+    return this.state.polyphonicSampleIndex || 0;
+  }
+
+  setPolyphonicStartNote(note: number) {
+    this.state.polyphonicStartNote = note;
+    if (this.callback) {
+      this.callback();
+    }
+  }
+
+  getPolyphonicStartNote(): number {
+    return this.state.polyphonicStartNote || 60;
   }
 
   notes(): NoteDefinition[] {

@@ -432,6 +432,6 @@ __metadata:
   resolution: "wam-extensions@https://github.com/boourns/wam-extensions.git#commit=bdca7553c4c3441998c91b91ee52e063e45effe3"
   peerDependencies:
     "@webaudiomodules/api": "*"
-  checksum: 56479256bdadf6cd6e628808af507b41e26dc70d9374e97fc919e2739190cdcc969987e14e38e0d77c7918a644c69b9ae9d79d78556d9c46995a63806a040597
+  checksum: f497858133771fabbf22e6a0d9268fe8fd1c50ef695bf476c20fc2b85dd00d990bc9aa053adc4c4b61ab03c46ab831abd86ede69d79fa9d57228c1650347d2b9
   languageName: node
   linkType: hard

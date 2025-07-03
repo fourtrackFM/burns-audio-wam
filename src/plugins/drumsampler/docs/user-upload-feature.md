@@ -31,3 +31,29 @@ The upload feature works by:
 5. Updating the pad display and waveform visualization
 
 Sample files are loaded directly in the browser without being sent to any server.
+
+## Polyphonic Mode
+
+The DrumSampler now includes a **Polyphonic Mode** that allows you to play a single sample across the keyboard with pitch control:
+
+### How to Use Polyphonic Mode
+
+1. Click the "Polyphonic Mode" button in the mode selector
+2. Select which sample slot to use from the dropdown
+3. Set the "Start Note" (default is C3/MIDI 60) - this is the note at which the sample plays at its original pitch
+4. Play different MIDI notes to hear the sample pitch-shifted accordingly
+
+### Polyphonic Mode Features
+
+- **Pitch Control**: Notes higher than the start note will play the sample at a higher pitch, notes lower will play at a lower pitch
+- **Polyphony**: Up to 8 simultaneous notes can be played at once
+- **Voice Stealing**: When all 8 voices are in use, the oldest voice will be stopped to make room for new notes
+- **Note Off Support**: Unlike drum mode, polyphonic mode responds to note-off messages to stop individual notes
+- **Sample Controls**: All the same sample editing features (start/end times, tone, pan, gain) are available
+
+### Technical Details
+
+- Pitch shifting is achieved using the `playbackRate` property of `AudioBufferSourceNode`
+- Pitch ratio is calculated as: `Math.pow(2, (targetNote - startNote) / 12)`
+- Each polyphonic voice has its own audio processing chain (filters, gain, pan)
+- MIDI note-on and note-off messages are handled for natural keyboard-style playing

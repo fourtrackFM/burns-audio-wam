@@ -314,6 +314,27 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@webaudiomodules/api@npm:^2.0.0-alpha.6":
+  version: 2.0.0-alpha.6
+  resolution: "@webaudiomodules/api@npm:2.0.0-alpha.6"
+  checksum: 7174b579d650c57912615dfb77e1933dde36a9957b811060faee772dadc62d4da2d1c3dcc9a41437be1b243489e9bd819b476c35eb2a788f641546da651f26b8
+  languageName: node
+  linkType: hard
+
+"@webaudiomodules/sdk-parammgr@npm:^0.0.13":
+  version: 0.0.13
+  resolution: "@webaudiomodules/sdk-parammgr@npm:0.0.13"
+  checksum: a50d7071a45ef5982fa79af125e88365b629c49281b6cb4988e349b15f9b362dc95fa1177a87b9d7fd8441ab2c82d8d69c8aee0f2fac6e786a441ebc6db0f8a1
+  languageName: node
+  linkType: hard
+
+"@webaudiomodules/sdk@npm:^0.0.12":
+  version: 0.0.12
+  resolution: "@webaudiomodules/sdk@npm:0.0.12"
+  checksum: e53730e5ae419e11b76077f9941ca72b083b3f9cbe0fce4786f37d0293853d2144ef599c1205a19f54ec068e708b053cd1ab13a8493de03e93ec10edf4d96a2e
+  languageName: node
+  linkType: hard
+
 "@webpack-cli/configtest@npm:^1.0.4":
   version: 1.0.4
   resolution: "@webpack-cli/configtest@npm:1.0.4"
@@ -828,13 +849,18 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "drm-16@workspace:."
   dependencies:
+    "@webaudiomodules/api": ^2.0.0-alpha.6
+    "@webaudiomodules/sdk": ^0.0.12
+    "@webaudiomodules/sdk-parammgr": ^0.0.13
     copy-webpack-plugin: ^9.0.0
     css-loader: ^6.2.0
     css-modules-typescript-loader: ^4.0.1
+    preact: ^10.26.9
     sass: ^1.39.2
     sass-loader: ^12.1.0
     ts-loader: ^8.0.12
     typescript: ^4.0.2
+    wam-extensions: ^0.2.3
     webpack: ^5.54.0
     webpack-cli: ^4.3.0
   languageName: unknown
@@ -2047,6 +2073,13 @@ fsevents@~2.3.2:
   languageName: node
   linkType: hard
 
+"preact@npm:^10.26.9":
+  version: 10.26.9
+  resolution: "preact@npm:10.26.9"
+  checksum: d5a9c521ca4ab35414bd9c7874e2ac4eaf0561875e2a5bb9f3c4c67e6e3d6971e122f763d19333f9b616a5f280b5d22cde526bb9c9fd9820bee15600a2f7269b
+  languageName: node
+  linkType: hard
+
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -2652,6 +2685,15 @@ typescript@^4.0.2:
   version: 2.3.0
   resolution: "v8-compile-cache@npm:2.3.0"
   checksum: adb0a271eaa2297f2f4c536acbfee872d0dd26ec2d76f66921aa7fc437319132773483344207bdbeee169225f4739016d8d2dbf0553913a52bb34da6d0334f8e
+  languageName: node
+  linkType: hard
+
+"wam-extensions@npm:^0.2.3":
+  version: 0.2.3
+  resolution: "wam-extensions@npm:0.2.3"
+  peerDependencies:
+    "@webaudiomodules/api": "*"
+  checksum: 8cffb7883da8d1cef54cca3da24ceeae151a71893dca7061358a21ed6d336a83a9aeaeaae73a455b2aa21734389f483b947a45b365956d768a493e09c056c69c
   languageName: node
   linkType: hard
 

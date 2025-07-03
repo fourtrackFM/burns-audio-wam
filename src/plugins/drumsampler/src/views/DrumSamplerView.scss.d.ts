@@ -3,9 +3,11 @@
 interface CssExports {
   'bigPanel': string;
   'button': string;
+  'buttonActive': string;
   'controlPanel': string;
   'controlPanelContent': string;
   'controlPanelHead': string;
+  'dropdown': string;
   'editorTitle': string;
   'editorTitleBar': string;
   'knobContainer': string;

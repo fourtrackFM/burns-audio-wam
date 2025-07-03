@@ -32,6 +32,7 @@ type DrumSamplerState = {
   selectedPad: number;
   isRecording: boolean;
   recordingStream: MediaStream | null;
+  currentMode: "drum" | "polyphonic";
 };
 
 export class DrumSamplerView extends Component<
@@ -49,6 +50,7 @@ export class DrumSamplerView extends Component<
       selectedPad: 0,
       isRecording: false,
       recordingStream: null,
+      currentMode: "drum",
     };
   }
 
@@ -344,13 +346,222 @@ export class DrumSamplerView extends Component<
     );
   }
 
+  renderModeSelector() {
+    const currentMode = this.getCurrentMode();
+
+    return (
+      <div class={styles.controlPanel}>
+        <div class={styles.controlPanelHead}>Mode</div>
+        <div class={styles.controlPanelContent}>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button
+              class={c([
+                styles.button,
+                currentMode === "drum" && styles.buttonActive,
+              ])}
+              onClick={() => this.handleModeChange("drum")}
+            >
+              Drum Mode
+            </button>
+            <button
+              class={c([
+                styles.button,
+                currentMode === "polyphonic" && styles.buttonActive,
+              ])}
+              onClick={() => this.handleModeChange("polyphonic")}
+            >
+              Polyphonic Mode
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  renderPolyphonicControls() {
+    const sampleIndex = this.kit.getPolyphonicSampleIndex();
+    const startNote = this.kit.getPolyphonicStartNote();
+    const noteNames = [
+      "C",
+      "C#",
+      "D",
+      "D#",
+      "E",
+      "F",
+      "F#",
+      "G",
+      "G#",
+      "A",
+      "A#",
+      "B",
+    ];
+    const octave = Math.floor(startNote / 12) - 1;
+    const noteName = noteNames[startNote % 12] + octave;
+
+    return (
+      <div class={styles.controlPanel}>
+        <div class={styles.controlPanelHead}>Polyphonic Settings</div>
+        <div class={styles.controlPanelContent}>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label>Sample Slot:</label>
+              <select
+                value={sampleIndex}
+                onChange={(e) =>
+                  this.handlePolyphonicSampleChange(
+                    parseInt((e.target as HTMLSelectElement).value)
+                  )
+                }
+                class={styles.dropdown}
+              >
+                {Array.from({ length: 16 }, (_, i) => (
+                  <option value={i}>
+                    {this.kit.state.slots[i]?.name || `Slot ${i + 1}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>
+                Start Note: {noteName} (MIDI {startNote})
+              </label>
+              {this.knob(
+                "Start Note",
+                "polyphonicStartNote",
+                0,
+                127,
+                startNote
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  renderPolyphonicWaveform() {
+    const sampleIndex = this.kit.getPolyphonicSampleIndex();
+    const buffer = this.kit.buffers[sampleIndex];
+    const slot = this.kit.state.slots[sampleIndex];
+
+    if (!slot) {
+      return (
+        <div class={styles.bigPanel}>
+          <div style="display: flex; justify-content: center; align-items: center; height: 200px;">
+            <div style="text-align: center; color: #666;">
+              <p>No sample loaded in selected slot.</p>
+              <p>Please load a sample first or select a different slot.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div class={styles.bigPanel}>
+        <div style="display: flex; flex-direction: column;">
+          <div class={styles.editorTitleBar}>
+            <div class={styles.editorTitle}>Polyphonic Sample: {slot.name}</div>
+            <div>
+              <button
+                class={styles.button}
+                onClick={() => {
+                  this.handleFileUpload(sampleIndex);
+                }}
+              >
+                Upload
+              </button>
+              <button
+                class={styles.button}
+                style="margin-left: 4px;"
+                onClick={() => {
+                  this.loadAsset(sampleIndex);
+                }}
+              >
+                Load
+              </button>
+            </div>
+          </div>
+
+          <WaveformView
+            width={400}
+            height={175}
+            buffer={buffer}
+            startTime={slot?.startTime}
+            endTime={slot?.endTime}
+            onStartTimeChange={(time) =>
+              this.handleStartTimeChange(sampleIndex, time)
+            }
+            onEndTimeChange={(time) =>
+              this.handleEndTimeChange(sampleIndex, time)
+            }
+          />
+        </div>
+
+        {this.renderPolyphonicSampleControls(slot, sampleIndex)}
+      </div>
+    );
+  }
+
+  renderPolyphonicSampleControls(slot: DrumSamplerVoiceState, index: number) {
+    let buffer = this.kit.buffers[index];
+    const maxDuration = buffer ? buffer.duration : 10;
+
+    return (
+      <div>
+        <div class={styles.controlPanel}>
+          <div class={styles.controlPanelHead}>Sample Output</div>
+          <div class={styles.controlPanelContent}>
+            {this.knob("Tone", `tone${index + 1}`, -1, 1)}
+            {this.knob("Pan", `pan${index + 1}`, -1, 1)}
+            {this.knob("Gain", `gain${index + 1}`, 0, 1.5)}
+          </div>
+        </div>
+
+        <div class={styles.controlPanel}>
+          <div class={styles.controlPanelHead}>Sample Timing</div>
+          <div class={styles.controlPanelContent}>
+            {this.knob(
+              "Start",
+              `startTime${index + 1}`,
+              0,
+              maxDuration,
+              slot.startTime || 0
+            )}
+            {this.knob(
+              "End",
+              `endTime${index + 1}`,
+              0,
+              maxDuration,
+              slot.endTime || maxDuration
+            )}
+          </div>
+          <div style="font-size: 10px; padding: 4px; text-align: center;">
+            Sample will be pitch-shifted based on played notes
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   render() {
     h("div", {});
+    const currentMode = this.getCurrentMode();
 
     return (
       <div class={styles.root}>
-        {this.renderPads()}
-        {this.renderPadEditor()}
+        {this.renderModeSelector()}
+        {currentMode === "drum" ? (
+          <div>
+            {this.renderPads()}
+            {this.renderPadEditor()}
+          </div>
+        ) : (
+          <div>
+            {this.renderPolyphonicControls()}
+            {this.renderPolyphonicWaveform()}
+          </div>
+        )}
       </div>
     );
   }
@@ -440,5 +651,29 @@ export class DrumSamplerView extends Component<
         );
       }
     }
+  }
+
+  // Mode switching methods
+  handleModeChange(mode: "drum" | "polyphonic") {
+    this.setState({ currentMode: mode });
+    this.parameterChanged("mode", mode === "polyphonic" ? 1 : 0);
+    this.kit.setMode(mode);
+  }
+
+  getCurrentMode(): "drum" | "polyphonic" {
+    const modeParam = this.value("mode");
+    return modeParam > 0.5 ? "polyphonic" : "drum";
+  }
+
+  // Polyphonic mode sample selection
+  handlePolyphonicSampleChange(index: number) {
+    this.parameterChanged("polyphonicSampleIndex", index);
+    this.kit.setPolyphonicSampleIndex(index);
+  }
+
+  // Polyphonic mode start note change
+  handlePolyphonicStartNoteChange(note: number) {
+    this.parameterChanged("polyphonicStartNote", note);
+    this.kit.setPolyphonicStartNote(note);
   }
 }

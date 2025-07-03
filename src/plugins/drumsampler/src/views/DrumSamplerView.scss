@@ -115,6 +115,15 @@
     background: #053156;
 }
 
+.buttonActive {
+    background: #dddddd;
+    color: #000000;
+}
+
+.buttonActive:hover {
+    background: #cccccc;
+}
+
 @keyframes pulse {
     0% {
         opacity: 1;
@@ -175,4 +184,23 @@
     100% {
         background-color: #c03030;
     }
+}
+
+.dropdown {
+    padding: 4px 8px;
+    background: #003163;
+    color: #ffffff;
+    border: 1px solid #074480;
+    border-radius: 2px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.dropdown:hover {
+    background: #074480;
+}
+
+.dropdown option {
+    background: #003163;
+    color: #ffffff;
 }
