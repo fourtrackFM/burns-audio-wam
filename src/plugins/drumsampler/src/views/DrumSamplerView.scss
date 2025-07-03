@@ -98,11 +98,33 @@
     align-items: center;
     padding: 0px 6px;
     color: #ffffff;
+    height: 24px;
+    cursor: pointer;
 
     background: #074480;
     border: 1px solid rgba(192, 194, 194, 0.2);
     box-sizing: border-box;
     border-radius: 2px;
+}
+
+.button:hover {
+    background: #0a5296;
+}
+
+.button:active {
+    background: #053156;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
 .controlPanel {
@@ -129,4 +151,28 @@
 
 .knobContainer {
     margin: 4px;
+}
+
+@keyframes pulseBg {
+    0% {
+        background-color: #c03030;
+    }
+    50% {
+        background-color: #ff4040;
+    }
+    100% {
+        background-color: #c03030;
+    }
+}
+
+@keyframes pulseBg {
+    0% {
+        background-color: #c03030;
+    }
+    50% {
+        background-color: #ff4040;
+    }
+    100% {
+        background-color: #c03030;
+    }
 }

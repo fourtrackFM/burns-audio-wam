@@ -14,6 +14,8 @@ interface CssExports {
   'padLabel': string;
   'padRow': string;
   'padSelected': string;
+  'pulse': string;
+  'pulseBg': string;
   'root': string;
 }
 export const cssExports: CssExports;
