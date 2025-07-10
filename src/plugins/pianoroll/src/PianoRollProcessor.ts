@@ -84,6 +84,7 @@ class PianoRollProcessor extends WamProcessor {
         
         if (this.pendingClipChange && this.pendingClipChange.timestamp <= currentTime) {
             this.currentClipId = this.pendingClipChange.id
+            this.port.postMessage({nowPlayingClipID: this.currentClipId});
             this.pendingClipChange = undefined
         }
 
@@ -157,6 +158,11 @@ class PianoRollProcessor extends WamProcessor {
                 id: message.data.id,
                 timestamp: 0,
             }
+        } else if (message.data && message.data.action == "schedulePendingClipChange") {
+            this.pendingClipChange = {
+              id: message.data.id,
+              timestamp: message.data.timestamp,
+            };
         } else if (message.data && message.data.action == "midiConfig") {
             const currentlyRecording = this.midiConfig.hostRecordingArmed && this.midiConfig.pluginRecordingArmed
             const stillRecording = message.data.config.hostRecordingArmed && message.data.config.pluginRecordingArmed
