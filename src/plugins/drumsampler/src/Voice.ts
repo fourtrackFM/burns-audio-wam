@@ -4,6 +4,8 @@ export type DrumSamplerVoiceState = {
   note: number;
   startTime?: number; // Start time in seconds
   endTime?: number; // End time in seconds
+  pitch?: number; // Pitch adjustment in semitones
+  playbackRate?: number; // Direct playback rate multiplier
 };
 
 export class DrumSamplerVoice {
@@ -12,6 +14,10 @@ export class DrumSamplerVoice {
   lowShelf: BiquadFilterNode;
   highShelf: BiquadFilterNode;
   context: BaseAudioContext;
+
+  // Store current pitch values
+  private _pitch: number = 0; // in semitones
+  private _playbackRate: number = 1; // direct multiplier
 
   constructor(context: BaseAudioContext) {
     this.context = context;
@@ -58,6 +64,18 @@ export class DrumSamplerVoice {
       minValue: 0,
       maxValue: 10,
     };
+    // Add pitch control (in semitones, -24 to +24 = 2 octaves range)
+    result[`pitch${index}`] = {
+      defaultValue: 0,
+      minValue: -24,
+      maxValue: 24,
+    };
+    // Add direct playback rate control (0.5x to 2x speed)
+    result[`playbackRate${index}`] = {
+      defaultValue: 1,
+      minValue: 0.25,
+      maxValue: 4,
+    };
 
     return result;
   }
@@ -70,6 +88,9 @@ export class DrumSamplerVoice {
     result[`highShelf${index}`] = this.highShelf.gain;
     result[`startTime${index}`] = { value: 0 };
     result[`endTime${index}`] = { value: 10 };
+    // Add internal pitch params (these will store the current values)
+    result[`pitch${index}`] = { value: 0 };
+    result[`playbackRate${index}`] = { value: 1 };
     return result;
   }
 
@@ -85,6 +106,27 @@ export class DrumSamplerVoice {
       targetRange: [-60, 0],
     };
     return result;
+  }
+
+  // Method to set pitch in semitones
+  setPitch(semitones: number) {
+    this._pitch = semitones;
+  }
+
+  // Method to set direct playback rate
+  setPlaybackRate(rate: number) {
+    this._playbackRate = Math.max(0.25, Math.min(4, rate));
+  }
+
+  // Convert semitones to playback rate multiplier
+  private semitonesToPlaybackRate(semitones: number): number {
+    return Math.pow(2, semitones / 12);
+  }
+
+  // Get the final playback rate (combining pitch and direct rate adjustments)
+  private getFinalPlaybackRate(): number {
+    const pitchRate = this.semitonesToPlaybackRate(this._pitch);
+    return pitchRate * this._playbackRate;
   }
 
   play(
@@ -113,6 +155,13 @@ export class DrumSamplerVoice {
     var source = this.context.createBufferSource();
     source.buffer = buffer;
     source.connect(this.lowShelf);
+
+    // Apply pitch/playback rate adjustment
+    const finalPlaybackRate = this.getFinalPlaybackRate();
+    source.playbackRate.setValueAtTime(
+      finalPlaybackRate,
+      this.context.currentTime
+    );
 
     // Start with offset and duration
     const duration = actualEndTime - startTime;
